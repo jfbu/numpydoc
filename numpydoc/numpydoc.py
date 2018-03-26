@@ -77,16 +77,23 @@ def _ascend(node, cls):
 
 
 def relabel_references(app, doc):
+    referencetexts = {}
     # Change 'hash-ref' to 'ref' in label text
     for citation_node in doc.traverse(citation):
-        if _ascend(citation_node, desc_content) is None:
-            # no desc node in ancestry -> not in a docstring
-            # XXX: should we also somehow check it's in a References section?
-            continue
+        # if _ascend(citation_node, desc_content) is None:
+        #     # no desc node in ancestry -> not in a docstring
+        #     # XXX: should we also somehow check it's in a References section?
+        #     print("NOT IN A DOCSTRING, SKIPPING")
+        #     continue
         label_node = citation_node[0]
         prefix, _, new_label = label_node[0].astext().partition('-')
         assert len(prefix) == HASH_LEN + 1
         new_text = Text(new_label)
+        if new_text in referencetexts:
+            referencetexts[new_text] += 1
+            new_text = Text(new_label + "-%s" % referencetexts[new_text])
+        else:
+            referencetexts[new_text] = 0
         label_node.replace(label_node[0], new_text)
 
         for id in citation_node['backrefs']:
