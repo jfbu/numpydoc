@@ -77,7 +77,7 @@ def _ascend(node, cls):
 
 
 def relabel_references(app, doc):
-    referencetexts = {}
+    global referencetexts
     # Change 'hash-ref' to 'ref' in label text
     for citation_node in doc.traverse(citation):
         if _ascend(citation_node, desc_content) is None:
@@ -108,7 +108,6 @@ def relabel_references(app, doc):
             for xref_node in ref.parent.traverse(matching_pending_xref):
                 xref_node.replace(xref_node[0], Text('[%s]' % new_text))
             ref.replace(ref_text, new_text.copy())
-
 
 DEDUPLICATION_TAG = '    !! processed by numpydoc !!'
 
@@ -176,6 +175,11 @@ def mangle_signature(app, what, name, obj, options, sig, retann):
         return sig, sixu('')
 
 
+def print_referencetexts(app, exc):
+    global referencetexts
+    print(referencetexts)
+
+
 def setup(app, get_doc_object_=get_doc_object):
     if not hasattr(app, 'add_config_value'):
         return  # probably called by nose, better bail out
@@ -183,9 +187,13 @@ def setup(app, get_doc_object_=get_doc_object):
     global get_doc_object
     get_doc_object = get_doc_object_
 
+    global referencetexts
+    referencetexts={}
+
     app.connect('autodoc-process-docstring', mangle_docstrings)
     app.connect('autodoc-process-signature', mangle_signature)
     app.connect('doctree-read', relabel_references)
+    app.connect('build-finished', print_referencetexts)
     app.add_config_value('numpydoc_edit_link', None, False)
     app.add_config_value('numpydoc_use_plots', None, False)
     app.add_config_value('numpydoc_use_blockquotes', None, False)
